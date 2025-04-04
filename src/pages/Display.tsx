@@ -6,6 +6,14 @@ import { extractYoutubeVideoId, extractTiktokVideoId } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
+// Adicionando a definição de tipos para o YouTube API
+declare global {
+  interface Window {
+    YT: any;
+    onYouTubeIframeAPIReady: () => void;
+  }
+}
+
 const Display = () => {
   const { items, fetchItems } = useContentStore();
   const activeItems = items.filter(item => item.active);
@@ -265,19 +273,7 @@ const Display = () => {
         {renderContent()}
       </div>
       
-      {/* Overlay com informações do conteúdo */}
-      {currentItem && (
-        <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/70 to-transparent p-4 text-white opacity-0 hover:opacity-100 transition-opacity">
-          <h3 className="font-medium">{currentItem.title}</h3>
-          <div className="text-sm opacity-80">
-            {`${currentIndex + 1} de ${activeItems.length}`}
-            {currentItem.type === 'video' && currentItem.useVideoDuration && 
-              ' • Duração real do vídeo'}
-            {(currentItem.type === 'image' || (currentItem.type === 'video' && !currentItem.useVideoDuration)) && 
-              ` • ${currentItem.duration}s`}
-          </div>
-        </div>
-      )}
+      {/* Removida a seção do overlay com informações do conteúdo */}
     </div>
   );
 };

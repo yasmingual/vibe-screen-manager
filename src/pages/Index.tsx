@@ -5,46 +5,76 @@ import { ContentCard } from "@/components/ContentCard";
 import { ContentForm } from "@/components/ContentForm";
 import { useContentStore, ContentItem } from "@/lib/store";
 import { Plus, Trash2, Monitor } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
-  const { items, addItem, updateItem, removeItem } = useContentStore();
+  const { items, addItem, updateItem, removeItem, fetchItems, isLoading } = useContentStore();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
+
+  // Set up real-time subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'content_items'
+        },
+        () => {
+          // Refresh data when changes occur
+          console.log('Real-time update received');
+          fetchItems();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchItems]);
+
   const selectedItem = selectedItemId 
     ? items.find((item) => item.id === selectedItemId) 
     : null;
 
-  const handleAddContent = (data: Omit<ContentItem, "id" | "createdAt">) => {
-    addItem(data);
+  const handleAddContent = async (data: Omit<ContentItem, "id" | "createdAt">) => {
+    await addItem(data);
     setIsAddDialogOpen(false);
     toast.success("Content added successfully");
   };
 
-  const handleEditContent = (data: Omit<ContentItem, "id" | "createdAt">) => {
+  const handleEditContent = async (data: Omit<ContentItem, "id" | "createdAt">) => {
     if (selectedItemId) {
-      updateItem(selectedItemId, data);
+      await updateItem(selectedItemId, data);
       setIsEditDialogOpen(false);
       toast.success("Content updated successfully");
     }
   };
 
-  const handleDeleteContent = () => {
+  const handleDeleteContent = async () => {
     if (selectedItemId) {
-      removeItem(selectedItemId);
+      await removeItem(selectedItemId);
       setIsDeleteDialogOpen(false);
       toast.success("Content deleted successfully");
     }
   };
 
-  const handleToggleActive = (id: string, active: boolean) => {
-    updateItem(id, { active });
+  const handleToggleActive = async (id: string, active: boolean) => {
+    await updateItem(id, { active });
     toast.success(`Content ${active ? 'activated' : 'deactivated'}`);
   };
 
@@ -90,7 +120,11 @@ const Index = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {items.length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <h2 className="text-2xl font-semibold mb-4">Loading content...</h2>
+          </div>
+        ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
             <h2 className="text-2xl font-semibold mb-4">No content yet</h2>
             <p className="text-muted-foreground mb-6">Start by adding images or videos to your playlist</p>

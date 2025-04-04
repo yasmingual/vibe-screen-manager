@@ -4,16 +4,53 @@ import { useContentStore, ContentItem } from "@/lib/store";
 import { useLocation } from "react-router-dom";
 import { extractYoutubeVideoId, extractTiktokVideoId } from "@/lib/utils";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const Display = () => {
-  const { items } = useContentStore();
+  const { items, fetchItems } = useContentStore();
   const activeItems = items.filter(item => item.active);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const youtubeRef = useRef<HTMLIFrameElement>(null);
   const tiktokRef = useRef<HTMLIFrameElement>(null);
   const location = useLocation();
+  
+  // Initial data fetch
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      await fetchItems();
+      setIsLoading(false);
+    };
+    
+    loadData();
+  }, [fetchItems]);
+  
+  // Set up real-time subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('display-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'content_items'
+        },
+        () => {
+          // Refresh data when changes occur
+          console.log('Display: Real-time update received');
+          fetchItems();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchItems]);
   
   useEffect(() => {
     console.log("Active items:", activeItems);
@@ -117,6 +154,14 @@ const Display = () => {
   
   // Render different content based on type
   const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full">
+          <h2 className="text-2xl font-semibold mb-4 text-white">Loading content...</h2>
+        </div>
+      );
+    }
+    
     if (!currentItem || activeItems.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center h-full">

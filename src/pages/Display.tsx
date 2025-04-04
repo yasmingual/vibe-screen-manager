@@ -6,12 +6,9 @@ import { extractYoutubeVideoId, extractTiktokVideoId } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-// Adicionando a definição de tipos para o YouTube API
-declare global {
-  interface Window {
-    YT: any;
-    onYouTubeIframeAPIReady: () => void;
-  }
+// Use existing YouTube API types from global window object
+interface Window {
+  onYouTubeIframeAPIReady: () => void;
 }
 
 const Display = () => {
@@ -195,76 +192,111 @@ const Display = () => {
     }
     
     if (currentItem.type === 'video') {
-      if (currentItem.videoSource === 'youtube') {
-        const videoId = extractYoutubeVideoId(currentItem.source);
-        console.log("YouTube Video ID:", videoId);
-        if (!videoId) return <div className="text-white">URL do YouTube inválida</div>;
-        
-        // Use autoplay=1 and enablejsapi=1 for YouTube videos
-        return (
-          <iframe
-            ref={youtubeRef}
-            className="w-full h-full"
-            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&controls=0&rel=0&mute=0&enablejsapi=1`}
-            allow="autoplay; encrypted-media"
-            allowFullScreen
-            onLoad={() => {
-              if (currentItem.useVideoDuration) {
-                console.log("YouTube video loaded, waiting for end event");
-              } else {
-                console.log("Using configured duration for YouTube video:", currentItem.duration);
-              }
-            }}
-          ></iframe>
-        );
-      }
-      
-      if (currentItem.videoSource === 'tiktok') {
-        const videoId = extractTiktokVideoId(currentItem.source);
-        console.log("TikTok Video ID:", videoId);
-        if (!videoId) return <div className="text-white">URL do TikTok inválida</div>;
-        
-        return (
-          <iframe
-            ref={tiktokRef}
-            className="w-full h-full"
-            src={`https://www.tiktok.com/embed/${videoId}`}
-            allow="autoplay"
-            allowFullScreen
-            onLoad={() => {
-              if (!currentItem.useVideoDuration) {
-                // For TikTok videos with configured duration
-                const timer = setTimeout(() => {
-                  handleNextItem();
-                }, currentItem.duration * 1000);
-                
-                return () => clearTimeout(timer);
-              }
-            }}
-          ></iframe>
-        );
-      }
-      
-      // For direct video URLs
+      // For videos, we'll use a container with background images on the sides
       return (
-        <video
-          ref={videoRef}
-          src={currentItem.source}
-          className="w-full h-full"
-          autoPlay
-          muted={false}
-          controls={false}
-          onLoadedMetadata={handleVideoMetadata}
-          onEnded={handleNextItem}
-          onError={(e) => {
-            console.error("Error loading video:", e);
-            toast.error("Erro ao carregar vídeo");
-          }}
-        ></video>
+        <div className="w-full h-full flex">
+          {/* Left background image */}
+          <div 
+            className="w-1/4 h-full" 
+            style={{ 
+              backgroundImage: currentItem.leftBackgroundImage ? `url(${currentItem.leftBackgroundImage})` : 'none',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }}
+          ></div>
+          
+          {/* Video container */}
+          <div className="w-2/4 h-full bg-black flex items-center justify-center">
+            {renderVideoContent()}
+          </div>
+          
+          {/* Right background image */}
+          <div 
+            className="w-1/4 h-full" 
+            style={{ 
+              backgroundImage: currentItem.rightBackgroundImage ? `url(${currentItem.rightBackgroundImage})` : 'none',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }}
+          ></div>
+        </div>
       );
     }
     
     return <div className="text-white">Tipo de conteúdo não suportado</div>;
+  };
+  
+  // Render video content based on source
+  const renderVideoContent = () => {
+    if (!currentItem) return null;
+    
+    if (currentItem.videoSource === 'youtube') {
+      const videoId = extractYoutubeVideoId(currentItem.source);
+      console.log("YouTube Video ID:", videoId);
+      if (!videoId) return <div className="text-white">URL do YouTube inválida</div>;
+      
+      // Use autoplay=1 and enablejsapi=1 for YouTube videos
+      return (
+        <iframe
+          ref={youtubeRef}
+          className="w-full h-full"
+          src={`https://www.youtube.com/embed/${videoId}?autoplay=1&controls=0&rel=0&mute=0&enablejsapi=1`}
+          allow="autoplay; encrypted-media"
+          allowFullScreen
+          onLoad={() => {
+            if (currentItem.useVideoDuration) {
+              console.log("YouTube video loaded, waiting for end event");
+            } else {
+              console.log("Using configured duration for YouTube video:", currentItem.duration);
+            }
+          }}
+        ></iframe>
+      );
+    }
+    
+    if (currentItem.videoSource === 'tiktok') {
+      const videoId = extractTiktokVideoId(currentItem.source);
+      console.log("TikTok Video ID:", videoId);
+      if (!videoId) return <div className="text-white">URL do TikTok inválida</div>;
+      
+      return (
+        <iframe
+          ref={tiktokRef}
+          className="w-full h-full"
+          src={`https://www.tiktok.com/embed/${videoId}?hideSharingOptions=1`}
+          allow="autoplay"
+          allowFullScreen
+          onLoad={() => {
+            if (!currentItem.useVideoDuration) {
+              // For TikTok videos with configured duration
+              const timer = setTimeout(() => {
+                handleNextItem();
+              }, currentItem.duration * 1000);
+              
+              return () => clearTimeout(timer);
+            }
+          }}
+        ></iframe>
+      );
+    }
+    
+    // For direct video URLs
+    return (
+      <video
+        ref={videoRef}
+        src={currentItem.source}
+        className="w-full h-full"
+        autoPlay
+        muted={false}
+        controls={false}
+        onLoadedMetadata={handleVideoMetadata}
+        onEnded={handleNextItem}
+        onError={(e) => {
+          console.error("Error loading video:", e);
+          toast.error("Erro ao carregar vídeo");
+        }}
+      ></video>
+    );
   };
   
   return (
@@ -272,8 +304,6 @@ const Display = () => {
       <div className={`w-full h-full transition-opacity duration-500 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
         {renderContent()}
       </div>
-      
-      {/* Removida a seção do overlay com informações do conteúdo */}
     </div>
   );
 };

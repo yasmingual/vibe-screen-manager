@@ -21,6 +21,8 @@ const contentSchema = z.object({
   duration: z.number().min(1, "Duration must be at least 1 second"),
   useVideoDuration: z.boolean().optional().default(true),
   active: z.boolean().default(true),
+  leftBackgroundImage: z.string().optional(),
+  rightBackgroundImage: z.string().optional(),
 });
 
 type ContentFormValues = z.infer<typeof contentSchema>;
@@ -47,6 +49,8 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
       duration: 5,
       useVideoDuration: true,
       active: true,
+      leftBackgroundImage: "",
+      rightBackgroundImage: "",
     },
   });
 
@@ -218,6 +222,40 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
                               ? "https://www.tiktok.com/@user/video/..."
                               : "Digite a URL do vídeo"
                           }
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="leftBackgroundImage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Imagem de fundo (lado esquerdo)</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="URL da imagem de fundo à esquerda"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="rightBackgroundImage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Imagem de fundo (lado direito)</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="URL da imagem de fundo à direita"
                           {...field}
                         />
                       </FormControl>

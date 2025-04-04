@@ -16,6 +16,8 @@ export interface ContentItem {
   useVideoDuration?: boolean; // Nova propriedade para indicar se deve usar a duração real do vídeo
   active: boolean;
   createdAt: Date;
+  leftBackgroundImage?: string; // New property for left background image
+  rightBackgroundImage?: string; // New property for right background image
 }
 
 interface ContentStore {
@@ -60,7 +62,9 @@ export const useContentStore = create<ContentStore>()(
             duration: item.duration,
             useVideoDuration: item.use_video_duration,
             active: item.active,
-            createdAt: new Date(item.created_at)
+            createdAt: new Date(item.created_at),
+            leftBackgroundImage: item.left_background_image,
+            rightBackgroundImage: item.right_background_image
           }));
           
           set({ items });
@@ -83,7 +87,9 @@ export const useContentStore = create<ContentStore>()(
               video_source: item.videoSource,
               duration: item.duration,
               use_video_duration: item.useVideoDuration,
-              active: item.active
+              active: item.active,
+              left_background_image: item.leftBackgroundImage,
+              right_background_image: item.rightBackgroundImage
             })
             .select()
             .single();
@@ -103,7 +109,9 @@ export const useContentStore = create<ContentStore>()(
             duration: data.duration,
             useVideoDuration: data.use_video_duration,
             active: data.active,
-            createdAt: new Date(data.created_at)
+            createdAt: new Date(data.created_at),
+            leftBackgroundImage: data.left_background_image,
+            rightBackgroundImage: data.right_background_image
           };
           
           set((state) => ({ items: [...state.items, newItem] }));
@@ -123,6 +131,8 @@ export const useContentStore = create<ContentStore>()(
           if (updates.useVideoDuration !== undefined) dbUpdates.use_video_duration = updates.useVideoDuration;
           if (updates.active !== undefined) dbUpdates.active = updates.active;
           if (updates.type !== undefined) dbUpdates.type = updates.type;
+          if (updates.leftBackgroundImage !== undefined) dbUpdates.left_background_image = updates.leftBackgroundImage;
+          if (updates.rightBackgroundImage !== undefined) dbUpdates.right_background_image = updates.rightBackgroundImage;
           
           // Update in Supabase
           const { error } = await supabase

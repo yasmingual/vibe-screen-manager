@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Slider } from "./ui/slider";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Checkbox } from "./ui/checkbox";
 
 const contentSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -18,6 +19,7 @@ const contentSchema = z.object({
   source: z.string().min(1, "Source is required"),
   videoSource: z.enum(["youtube", "tiktok", "url"]).optional(),
   duration: z.number().min(1, "Duration must be at least 1 second"),
+  useVideoDuration: z.boolean().optional().default(true),
   active: z.boolean().default(true),
 });
 
@@ -33,6 +35,7 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
   const [contentType, setContentType] = useState<ContentType>(initialData?.type || "image");
   const [videoSource, setVideoSource] = useState<VideoSource | undefined>(initialData?.videoSource || "youtube");
   const [duration, setDuration] = useState(initialData?.duration || 5);
+  const [useVideoDuration, setUseVideoDuration] = useState(initialData?.useVideoDuration !== false);
   
   const form = useForm<ContentFormValues>({
     resolver: zodResolver(contentSchema),
@@ -42,6 +45,7 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
       source: "",
       videoSource: "youtube",
       duration: 5,
+      useVideoDuration: true,
       active: true,
     },
   });
@@ -100,6 +104,11 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
     form.setValue("duration", newDuration);
   };
 
+  const handleUseVideoDurationChange = (checked: boolean) => {
+    setUseVideoDuration(checked);
+    form.setValue("useVideoDuration", checked);
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
@@ -108,9 +117,9 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
           name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Title</FormLabel>
+              <FormLabel>Título</FormLabel>
               <FormControl>
-                <Input placeholder="Enter content title" {...field} />
+                <Input placeholder="Digite o título do conteúdo" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -118,15 +127,15 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
         />
 
         <FormItem className="space-y-2">
-          <FormLabel>Content Type</FormLabel>
+          <FormLabel>Tipo de Conteúdo</FormLabel>
           <Tabs
             defaultValue={contentType}
             onValueChange={handleContentTypeChange}
             className="w-full"
           >
             <TabsList className="grid grid-cols-2 w-full">
-              <TabsTrigger value="image">Image</TabsTrigger>
-              <TabsTrigger value="video">Video</TabsTrigger>
+              <TabsTrigger value="image">Imagem</TabsTrigger>
+              <TabsTrigger value="video">Vídeo</TabsTrigger>
             </TabsList>
             <TabsContent value="image" className="pt-4">
               <FormField
@@ -134,7 +143,7 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
                 name="source"
                 render={({ field: { onChange, value, ...rest } }) => (
                   <FormItem>
-                    <FormLabel>Image Source</FormLabel>
+                    <FormLabel>Fonte da Imagem</FormLabel>
                     <FormControl>
                       <div className="flex flex-col space-y-2">
                         <RadioGroup
@@ -146,7 +155,7 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
                             <label htmlFor="image-url">URL</label>
                           </div>
                           <Input 
-                            placeholder="Enter image URL" 
+                            placeholder="Digite a URL da imagem" 
                             onChange={(e) => {
                               onChange(e.target.value);
                             }}
@@ -168,7 +177,7 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
                   name="videoSource"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Video Source</FormLabel>
+                      <FormLabel>Fonte do Vídeo</FormLabel>
                       <FormControl>
                         <RadioGroup
                           defaultValue={videoSource}
@@ -185,7 +194,7 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
                           </div>
                           <div className="flex items-center space-x-1">
                             <RadioGroupItem value="url" id="url" />
-                            <label htmlFor="url">Other URL</label>
+                            <label htmlFor="url">URL</label>
                           </div>
                         </RadioGroup>
                       </FormControl>
@@ -199,7 +208,7 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
                   name="source"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Video URL</FormLabel>
+                      <FormLabel>URL do Vídeo</FormLabel>
                       <FormControl>
                         <Input
                           placeholder={
@@ -207,7 +216,7 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
                               ? "https://www.youtube.com/watch?v=..."
                               : videoSource === "tiktok"
                               ? "https://www.tiktok.com/@user/video/..."
-                              : "Enter video URL"
+                              : "Digite a URL do vídeo"
                           }
                           {...field}
                         />
@@ -216,37 +225,65 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="useVideoDuration"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 pt-2">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={(checked) => {
+                            field.onChange(checked);
+                            handleUseVideoDurationChange(checked === true);
+                          }}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          Usar duração real do vídeo
+                        </FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          Quando ativado, o sistema usará o tempo real do vídeo
+                        </p>
+                      </div>
+                    </FormItem>
+                  )}
+                />
               </div>
             </TabsContent>
           </Tabs>
         </FormItem>
 
-        <FormField
-          control={form.control}
-          name="duration"
-          render={({ field: { onChange, ...rest } }) => (
-            <FormItem>
-              <FormLabel>Display Duration (seconds): {duration}</FormLabel>
-              <FormControl>
-                <Slider
-                  defaultValue={[duration]}
-                  min={1}
-                  max={60}
-                  step={1}
-                  onValueChange={handleDurationChange}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {(contentType !== 'video' || !useVideoDuration) && (
+          <FormField
+            control={form.control}
+            name="duration"
+            render={({ field: { onChange, ...rest } }) => (
+              <FormItem>
+                <FormLabel>Duração de exibição (segundos): {duration}</FormLabel>
+                <FormControl>
+                  <Slider
+                    defaultValue={[duration]}
+                    min={1}
+                    max={60}
+                    step={1}
+                    onValueChange={handleDurationChange}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <div className="flex justify-end space-x-2">
           <Button variant="outline" onClick={onCancel}>
-            Cancel
+            Cancelar
           </Button>
           <Button type="submit">
-            {initialData ? "Update" : "Add"} Content
+            {initialData ? "Atualizar" : "Adicionar"} Conteúdo
           </Button>
         </div>
       </form>

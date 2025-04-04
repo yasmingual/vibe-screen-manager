@@ -12,6 +12,7 @@ export interface ContentItem {
   source: string;
   videoSource?: VideoSource;
   duration: number; // Duration in seconds
+  useVideoDuration?: boolean; // Nova propriedade para indicar se deve usar a duração real do vídeo
   active: boolean;
   createdAt: Date;
 }

@@ -6,7 +6,7 @@ import { extractYoutubeVideoId, extractTiktokVideoId } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-// Add a global declaration for the YouTube API
+// Adicionando a definição de tipos para o YouTube API
 declare global {
   interface Window {
     YT: any;
@@ -25,6 +25,7 @@ const Display = () => {
   const tiktokRef = useRef<HTMLIFrameElement>(null);
   const location = useLocation();
   
+  // Initial data fetch
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
@@ -35,6 +36,7 @@ const Display = () => {
     loadData();
   }, [fetchItems]);
   
+  // Set up real-time subscription
   useEffect(() => {
     const channel = supabase
       .channel('display-realtime')
@@ -46,6 +48,7 @@ const Display = () => {
           table: 'content_items'
         },
         () => {
+          // Refresh data when changes occur
           console.log('Display: Real-time update received');
           fetchItems();
         }
@@ -61,6 +64,7 @@ const Display = () => {
     console.log("Active items:", activeItems);
   }, [activeItems]);
   
+  // Parse start index from URL if provided
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const startIndex = searchParams.get('start');
@@ -72,20 +76,26 @@ const Display = () => {
     }
   }, [location.search, activeItems.length]);
   
+  // Get current item
   const currentItem = activeItems[currentIndex];
   
+  // Debugging
   useEffect(() => {
     console.log("Current item:", currentItem);
   }, [currentItem]);
   
+  // Handle YouTube API
   useEffect(() => {
+    // This will load the YouTube IFrame API script when needed
     if (currentItem?.type === 'video' && currentItem?.videoSource === 'youtube') {
+      // Load YouTube API if not already loaded
       if (typeof window.YT === 'undefined') {
         const tag = document.createElement('script');
         tag.src = 'https://www.youtube.com/iframe_api';
         const firstScriptTag = document.getElementsByTagName('script')[0];
         firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
         
+        // Define the callback function that YouTube API will call when ready
         window.onYouTubeIframeAPIReady = () => {
           console.log("YouTube API is ready");
         };
@@ -93,11 +103,14 @@ const Display = () => {
     }
   }, [currentItem]);
   
+  // Handle automatic transitions
   useEffect(() => {
     if (!currentItem || activeItems.length === 0) return;
     
+    // For videos, we need to wait for them to finish playing
     if (currentItem.type === 'video') {
       if (currentItem.videoSource === 'url' && videoRef.current) {
+        // For direct video URLs using HTML5 video element
         const handleVideoEnd = () => {
           handleNextItem();
         };
@@ -107,13 +120,17 @@ const Display = () => {
           videoRef.current?.removeEventListener('ended', handleVideoEnd);
         };
       } else if (!currentItem.useVideoDuration) {
+        // Use configured duration if useVideoDuration is false
         const timer = setTimeout(() => {
           handleNextItem();
         }, currentItem.duration * 1000);
         
         return () => clearTimeout(timer);
       }
+      // For YouTube and TikTok videos, we rely on postMessage events or fallback to duration
+      // These are handled by event listeners in renderContent
     } else {
+      // For images, use the specified duration
       const timer = setTimeout(() => {
         handleNextItem();
       }, currentItem.duration * 1000);
@@ -129,18 +146,21 @@ const Display = () => {
     setTimeout(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % activeItems.length);
       setIsTransitioning(false);
-    }, 500);
+    }, 500); // Match transition duration with CSS
   };
   
+  // Handle video metadata loading to get duration
   const handleVideoMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = e.target as HTMLVideoElement;
     console.log("Video duration detected:", video.duration);
     
     if (currentItem && currentItem.useVideoDuration) {
+      // Auto-proceed after video ends (handled by 'ended' event)
       console.log("Using natural video duration for playback");
     }
   };
   
+  // Render different content based on type
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -180,6 +200,7 @@ const Display = () => {
         console.log("YouTube Video ID:", videoId);
         if (!videoId) return <div className="text-white">URL do YouTube inválida</div>;
         
+        // Use autoplay=1 and enablejsapi=1 for YouTube videos
         return (
           <iframe
             ref={youtubeRef}
@@ -203,30 +224,28 @@ const Display = () => {
         console.log("TikTok Video ID:", videoId);
         if (!videoId) return <div className="text-white">URL do TikTok inválida</div>;
         
-        // Update the TikTok embed URL to hide text interface elements
         return (
-          <div className="w-full h-full overflow-hidden">
-            <iframe
-              ref={tiktokRef}
-              className="w-full h-full scale-125" /* Scale up to hide controls */
-              src={`https://www.tiktok.com/embed/${videoId}?hideSharingOptions=1`}
-              allow="autoplay"
-              allowFullScreen
-              style={{ border: 'none', position: 'relative', top: '-5%' }}
-              onLoad={() => {
-                if (!currentItem.useVideoDuration) {
-                  const timer = setTimeout(() => {
-                    handleNextItem();
-                  }, currentItem.duration * 1000);
-                  
-                  return () => clearTimeout(timer);
-                }
-              }}
-            ></iframe>
-          </div>
+          <iframe
+            ref={tiktokRef}
+            className="w-full h-full"
+            src={`https://www.tiktok.com/embed/${videoId}`}
+            allow="autoplay"
+            allowFullScreen
+            onLoad={() => {
+              if (!currentItem.useVideoDuration) {
+                // For TikTok videos with configured duration
+                const timer = setTimeout(() => {
+                  handleNextItem();
+                }, currentItem.duration * 1000);
+                
+                return () => clearTimeout(timer);
+              }
+            }}
+          ></iframe>
         );
       }
       
+      // For direct video URLs
       return (
         <video
           ref={videoRef}
@@ -253,6 +272,8 @@ const Display = () => {
       <div className={`w-full h-full transition-opacity duration-500 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
         {renderContent()}
       </div>
+      
+      {/* Removida a seção do overlay com informações do conteúdo */}
     </div>
   );
 };

@@ -48,7 +48,7 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
 
   const handleSubmit = (values: ContentFormValues) => {
     // For image uploads, handle file input
-    if (values.type === "image" && values.source instanceof FileList) {
+    if (values.type === "image" && typeof values.source === "object" && values.source instanceof FileList) {
       const file = values.source[0];
       if (!file) {
         toast.error("Please select an image file");

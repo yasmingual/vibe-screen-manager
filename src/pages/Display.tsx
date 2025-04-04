@@ -1,9 +1,18 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useContentStore, ContentItem } from "@/lib/store";
 import { useLocation } from "react-router-dom";
 import { extractYoutubeVideoId, extractTiktokVideoId } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+
+// Add a global declaration for the YouTube API
+declare global {
+  interface Window {
+    YT: any;
+    onYouTubeIframeAPIReady: () => void;
+  }
+}
 
 const Display = () => {
   const { items, fetchItems } = useContentStore();
@@ -194,23 +203,27 @@ const Display = () => {
         console.log("TikTok Video ID:", videoId);
         if (!videoId) return <div className="text-white">URL do TikTok inválida</div>;
         
+        // Update the TikTok embed URL to hide text interface elements
         return (
-          <iframe
-            ref={tiktokRef}
-            className="w-full h-full"
-            src={`https://www.tiktok.com/embed/${videoId}`}
-            allow="autoplay"
-            allowFullScreen
-            onLoad={() => {
-              if (!currentItem.useVideoDuration) {
-                const timer = setTimeout(() => {
-                  handleNextItem();
-                }, currentItem.duration * 1000);
-                
-                return () => clearTimeout(timer);
-              }
-            }}
-          ></iframe>
+          <div className="w-full h-full overflow-hidden">
+            <iframe
+              ref={tiktokRef}
+              className="w-full h-full scale-125" /* Scale up to hide controls */
+              src={`https://www.tiktok.com/embed/${videoId}?hideSharingOptions=1`}
+              allow="autoplay"
+              allowFullScreen
+              style={{ border: 'none', position: 'relative', top: '-5%' }}
+              onLoad={() => {
+                if (!currentItem.useVideoDuration) {
+                  const timer = setTimeout(() => {
+                    handleNextItem();
+                  }, currentItem.duration * 1000);
+                  
+                  return () => clearTimeout(timer);
+                }
+              }}
+            ></iframe>
+          </div>
         );
       }
       
@@ -240,8 +253,6 @@ const Display = () => {
       <div className={`w-full h-full transition-opacity duration-500 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
         {renderContent()}
       </div>
-      
-      {/* Removida a seção do overlay com informações do conteúdo */}
     </div>
   );
 };

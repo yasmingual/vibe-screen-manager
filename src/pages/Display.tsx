@@ -44,11 +44,16 @@ const Display = () => {
     // This will load the YouTube IFrame API script when needed
     if (currentItem?.type === 'video' && currentItem?.videoSource === 'youtube') {
       // Load YouTube API if not already loaded
-      if (!window.YT) {
+      if (typeof window.YT === 'undefined') {
         const tag = document.createElement('script');
         tag.src = 'https://www.youtube.com/iframe_api';
         const firstScriptTag = document.getElementsByTagName('script')[0];
         firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+        
+        // Define the callback function that YouTube API will call when ready
+        window.onYouTubeIframeAPIReady = () => {
+          console.log("YouTube API is ready");
+        };
       }
     }
   }, [currentItem]);

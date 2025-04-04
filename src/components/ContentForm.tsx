@@ -1,3 +1,4 @@
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -48,11 +49,12 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
   const handleSubmit = (values: ContentFormValues) => {
     // For image uploads, check if source is a FileList
     if (values.type === "image" && values.source && typeof values.source === "object") {
-      // Convert FileList to string data URL
-      if ("files" in values.source) {
-        const file = values.source.files[0];
+      // Verifica se o objeto tem a propriedade 'files'
+      const fileInput = values.source as unknown as { files?: FileList };
+      if (fileInput && fileInput.files && fileInput.files.length > 0) {
+        const file = fileInput.files[0];
         if (!file) {
-          toast.error("Please select an image file");
+          toast.error("Por favor, selecione um arquivo de imagem");
           return;
         }
         
@@ -67,6 +69,8 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
           }
         };
         reader.readAsDataURL(file);
+      } else {
+        onSubmit(values);
       }
     } else {
       onSubmit(values);

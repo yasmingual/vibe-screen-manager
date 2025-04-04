@@ -12,6 +12,10 @@ const Display = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const location = useLocation();
   
+  useEffect(() => {
+    console.log("Active items:", activeItems);
+  }, [activeItems]);
+  
   // Parse start index from URL if provided
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -26,6 +30,11 @@ const Display = () => {
   
   // Get current item
   const currentItem = activeItems[currentIndex];
+  
+  // Debugging
+  useEffect(() => {
+    console.log("Current item:", currentItem);
+  }, [currentItem]);
   
   // Handle automatic transitions
   useEffect(() => {
@@ -67,8 +76,8 @@ const Display = () => {
     if (!currentItem || activeItems.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center h-full">
-          <h2 className="text-2xl font-semibold mb-4 text-white">No active content</h2>
-          <p className="text-gray-300">Add and activate content in the admin dashboard</p>
+          <h2 className="text-2xl font-semibold mb-4 text-white">Nenhum conteúdo ativo</h2>
+          <p className="text-gray-300">Adicione e ative conteúdo no painel de administração</p>
         </div>
       );
     }
@@ -79,6 +88,10 @@ const Display = () => {
           src={currentItem.source} 
           alt={currentItem.title}
           className="w-full h-full object-contain"
+          onError={(e) => {
+            console.error("Error loading image:", e);
+            (e.target as HTMLImageElement).src = '/placeholder.svg';
+          }}
         />
       );
     }
@@ -86,7 +99,8 @@ const Display = () => {
     if (currentItem.type === 'video') {
       if (currentItem.videoSource === 'youtube') {
         const videoId = extractYoutubeVideoId(currentItem.source);
-        if (!videoId) return <div className="text-white">Invalid YouTube URL</div>;
+        console.log("YouTube Video ID:", videoId);
+        if (!videoId) return <div className="text-white">URL do YouTube inválida</div>;
         
         return (
           <iframe
@@ -100,7 +114,8 @@ const Display = () => {
       
       if (currentItem.videoSource === 'tiktok') {
         const videoId = extractTiktokVideoId(currentItem.source);
-        if (!videoId) return <div className="text-white">Invalid TikTok URL</div>;
+        console.log("TikTok Video ID:", videoId);
+        if (!videoId) return <div className="text-white">URL do TikTok inválida</div>;
         
         return (
           <iframe
@@ -122,11 +137,12 @@ const Display = () => {
           muted={false}
           controls={false}
           onEnded={handleNextItem}
+          onError={(e) => console.error("Error loading video:", e)}
         ></video>
       );
     }
     
-    return <div className="text-white">Unsupported content type</div>;
+    return <div className="text-white">Tipo de conteúdo não suportado</div>;
   };
   
   return (
@@ -140,7 +156,7 @@ const Display = () => {
         <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/70 to-transparent p-4 text-white opacity-0 hover:opacity-100 transition-opacity">
           <h3 className="font-medium">{currentItem.title}</h3>
           <div className="text-sm opacity-80">
-            {`${currentIndex + 1} of ${activeItems.length}`}
+            {`${currentIndex + 1} de ${activeItems.length}`}
           </div>
         </div>
       )}

@@ -1,73 +1,111 @@
-# Welcome to your Lovable project
+# Vibe Screen Manager
 
-## Project info
+Sistema de gerenciamento de conteúdo para exibição em telas digitais.
 
-**URL**: https://lovable.dev/projects/ffaea387-580d-4ef1-a325-0849500a46f4
+## Funcionalidades
 
-## How can I edit this code?
+### Gerenciamento de Conteúdo
+- Adição de imagens e vídeos
+- Edição e exclusão de conteúdos
+- Ativação/desativação de conteúdos
+- Reordenação de conteúdos via drag and drop
+- Visualização prévia dos conteúdos
 
-There are several ways of editing your application.
+### Integrações
+- Importação de feeds RSS
+- Busca e importação de trailers de filmes e séries
+- Integração com resultados de loterias da Caixa
 
-**Use Lovable**
+### Interface
+- Design moderno e responsivo
+- Modais para adição e edição de conteúdos
+- Feedback visual durante operações
+- Suporte a temas claro/escuro
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/ffaea387-580d-4ef1-a325-0849500a46f4) and start prompting.
+## Tecnologias Utilizadas
 
-Changes made via Lovable will be committed automatically to this repo.
+- React
+- TypeScript
+- Tailwind CSS
+- Zustand (gerenciamento de estado)
+- Supabase (banco de dados)
+- Dnd-kit (drag and drop)
+- Lucide Icons
+- Sonner (notificações)
 
-**Use your preferred IDE**
+## Estrutura do Projeto
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+```
+src/
+├── components/         # Componentes React
+├── lib/               # Utilitários e lógica de negócio
+├── pages/             # Páginas da aplicação
+├── public/            # Arquivos estáticos
+└── types/             # Definições de tipos TypeScript
+```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Instalação
 
-Follow these steps:
+1. Clone o repositório:
+```bash
+git clone https://github.com/yasmingual/vibe-screen-manager.git
+```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+2. Instale as dependências:
+```bash
+npm install
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+3. Configure as variáveis de ambiente:
+```bash
+cp .env.example .env
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+4. Inicie o servidor de desenvolvimento:
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Configuração
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Variáveis de Ambiente
 
-**Use GitHub Codespaces**
+- `VITE_SUPABASE_URL`: URL do projeto Supabase
+- `VITE_SUPABASE_ANON_KEY`: Chave anônima do Supabase
+- `VITE_TMDB_API_KEY`: Chave da API do TMDB (para trailers)
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Uso
 
-## What technologies are used for this project?
+### Adicionando Conteúdo
+1. Clique no botão "Adicionar Conteúdo"
+2. Preencha os campos necessários
+3. Clique em "Salvar"
 
-This project is built with:
+### Importando RSS
+1. Clique no botão "Importar RSS"
+2. Insira a URL do feed RSS
+3. Selecione os itens desejados
+4. Clique em "Importar"
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Buscando Trailers
+1. Clique no botão "Buscar Trailers"
+2. Digite o nome do filme/série
+3. Selecione os trailers desejados
+4. Clique em "Importar"
 
-## How can I deploy this project?
+### Reordenando Conteúdos
+1. Clique e segure o ícone de arrastar (três linhas verticais)
+2. Arraste o conteúdo para a nova posição
+3. Solte para confirmar
 
-Simply open [Lovable](https://lovable.dev/projects/ffaea387-580d-4ef1-a325-0849500a46f4) and click on Share -> Publish.
+## Contribuição
 
-## Can I connect a custom domain to my Lovable project?
+1. Faça um fork do projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
+3. Commit suas mudanças (`git commit -m 'feat: adiciona nova feature'`)
+4. Push para a branch (`git push origin feature/nova-feature`)
+5. Abra um Pull Request
 
-Yes it is!
+## Licença
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.

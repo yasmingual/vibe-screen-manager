@@ -100,61 +100,78 @@ export function ContentCard({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="relative h-40 bg-muted overflow-hidden">
-        <img 
-          src={getThumbnail()} 
-          alt={item.title}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = '/placeholder.svg';
-          }}
-        />
-        {isHovered && (
-          <div className="absolute inset-0 bg-black/60 flex items-center justify-center animate-fade-in">
-            <Button 
-              size="icon" 
-              variant="outline" 
-              onClick={() => onPreview(item.id)}
-              className="bg-black/50 border-white/50 hover:bg-white/20"
-            >
-              <Play className="h-8 w-8 text-white" />
-            </Button>
-          </div>
-        )}
-        <div className="absolute top-2 right-2 flex flex-col gap-1">
+      <div className="absolute top-2 right-2 z-50 flex items-center gap-2">
+        <div className="flex flex-col gap-1">
           <Button
-            size="icon"
-            variant="ghost"
+            size="sm"
+            variant="secondary"
             onClick={() => onMoveUp(item.id)}
             disabled={isFirst}
-            className="h-6 w-6 p-0"
+            className="h-8 px-2 py-0 bg-background/80 hover:bg-background"
           >
             <ArrowUp className="h-4 w-4" />
           </Button>
           <Button
-            size="icon"
-            variant="ghost"
+            size="sm"
+            variant="secondary"
             onClick={() => onMoveDown(item.id)}
             disabled={isLast}
-            className="h-6 w-6 p-0"
+            className="h-8 px-2 py-0 bg-background/80 hover:bg-background"
           >
             <ArrowDown className="h-4 w-4" />
           </Button>
         </div>
-        <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
-          {item.type === 'image' ? 'Image' : 'Video'} • {formatDuration(item.duration)}
-        </div>
+        <Switch 
+          checked={item.active} 
+          onCheckedChange={async (checked) => {
+            setIsToggling(true);
+            await onToggleActive(item.id, checked);
+            setIsToggling(false);
+          }}
+          disabled={isToggling}
+        />
       </div>
-      
+
       <CardHeader className="p-3">
-        <CardTitle className="text-sm font-medium line-clamp-1">{item.title}</CardTitle>
+        <CardTitle className="text-lg font-medium line-clamp-1">{item.title}</CardTitle>
       </CardHeader>
-      
+
+      <CardContent className="p-3 pt-0">
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium">Fonte:</span> {item.source}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium">Tipo:</span> {item.type}
+          </p>
+          {item.description && (
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium">Descrição:</span> {item.description}
+            </p>
+          )}
+        </div>
+      </CardContent>
+
       <CardFooter className="p-3 pt-0 flex justify-between">
-        <Button variant="ghost" size="sm" onClick={() => onEdit(item.id)}>
-          <Edit className="h-4 w-4 mr-1" /> Edit
-        </Button>
-        <Button variant="ghost" size="sm" onClick={handleDelete} className="text-destructive" disabled={isDeleting}>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => onEdit(item.id)}>
+            <Edit className="h-4 w-4 mr-1" /> Editar
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => onPreview(item.id)}>
+            <Play className="h-4 w-4 mr-1" /> Visualizar
+          </Button>
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={async () => {
+            setIsDeleting(true);
+            await onDelete(item.id);
+            setIsDeleting(false);
+          }}
+          disabled={isDeleting}
+          className="text-destructive hover:text-destructive"
+        >
           <Trash2 className="h-4 w-4 mr-1" /> {isDeleting ? 'Excluindo...' : 'Excluir'}
         </Button>
       </CardFooter>

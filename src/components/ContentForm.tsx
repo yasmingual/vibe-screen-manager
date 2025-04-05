@@ -11,17 +11,18 @@ import { Slider } from "./ui/slider";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Checkbox } from "./ui/checkbox";
+import { Upload } from "lucide-react";
 
 const contentSchema = z.object({
   title: z.string().min(1, "Title is required"),
   type: z.enum(["image", "video"]),
-  source: z.string().min(1, "Source is required"),
+  source: z.union([z.string(), z.instanceof(File)]).optional(),
   videoSource: z.enum(["youtube", "tiktok", "url"]).optional(),
   duration: z.number().min(1, "Duration must be at least 1 second"),
   useVideoDuration: z.boolean().optional().default(true),
   active: z.boolean().default(true),
-  leftBackgroundImage: z.string().optional(),
-  rightBackgroundImage: z.string().optional(),
+  leftBackgroundImage: z.union([z.string(), z.instanceof(File)]).optional(),
+  rightBackgroundImage: z.union([z.string(), z.instanceof(File)]).optional(),
 });
 
 type ContentFormValues = z.infer<typeof contentSchema>;
@@ -74,31 +75,40 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
   }, [initialData, form]);
 
   const handleSubmit = (values: ContentFormValues) => {
-    if (values.type === "image" && values.source && typeof values.source === "object") {
-      const fileInput = values.source as unknown as { files?: FileList };
-      if (fileInput && fileInput.files && fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        if (!file) {
-          toast.error("Por favor, selecione um arquivo de imagem");
-          return;
-        }
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          if (e.target?.result) {
-            onSubmit({
-              ...values,
-              source: e.target.result as string,
-            });
-          }
-        };
-        reader.readAsDataURL(file);
-      } else {
-        onSubmit(values);
+    const processFile = async (file: File | string | undefined): Promise<string> => {
+      if (file instanceof File) {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            if (e.target?.result) {
+              resolve(e.target.result as string);
+            }
+          };
+          reader.readAsDataURL(file);
+        });
       }
-    } else {
-      onSubmit(values);
-    }
+      return file || "";
+    };
+
+    const processFormData = async () => {
+      const processedValues = { ...values };
+      
+      if (values.type === "image" && values.source instanceof File) {
+        processedValues.source = await processFile(values.source);
+      }
+      
+      if (values.leftBackgroundImage instanceof File) {
+        processedValues.leftBackgroundImage = await processFile(values.leftBackgroundImage);
+      }
+      
+      if (values.rightBackgroundImage instanceof File) {
+        processedValues.rightBackgroundImage = await processFile(values.rightBackgroundImage);
+      }
+      
+      onSubmit(processedValues);
+    };
+
+    processFormData();
   };
 
   const handleContentTypeChange = (value: string) => {
@@ -183,6 +193,22 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
                             value={typeof value === 'string' ? value : ''}
                             className="ml-6"
                           />
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="upload" id="image-upload" />
+                            <label htmlFor="image-upload">Upload</label>
+                          </div>
+                          <div className="ml-6">
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  onChange(file);
+                                }
+                              }}
+                            />
+                          </div>
                         </RadioGroup>
                       </div>
                     </FormControl>
@@ -250,14 +276,32 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
                 <FormField
                   control={form.control}
                   name="leftBackgroundImage"
-                  render={({ field }) => (
+                  render={({ field: { onChange, value, ...rest } }) => (
                     <FormItem>
                       <FormLabel>Imagem de fundo (lado esquerdo)</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="URL da imagem de fundo à esquerda"
-                          {...field}
-                        />
+                        <div className="flex flex-col space-y-2">
+                          <Input
+                            placeholder="URL da imagem de fundo à esquerda"
+                            onChange={(e) => {
+                              onChange(e.target.value);
+                            }}
+                            value={typeof value === 'string' ? value : ''}
+                          />
+                          <div className="flex items-center space-x-2">
+                            <Upload className="h-4 w-4" />
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  onChange(file);
+                                }
+                              }}
+                            />
+                          </div>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -267,14 +311,32 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
                 <FormField
                   control={form.control}
                   name="rightBackgroundImage"
-                  render={({ field }) => (
+                  render={({ field: { onChange, value, ...rest } }) => (
                     <FormItem>
                       <FormLabel>Imagem de fundo (lado direito)</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="URL da imagem de fundo à direita"
-                          {...field}
-                        />
+                        <div className="flex flex-col space-y-2">
+                          <Input
+                            placeholder="URL da imagem de fundo à direita"
+                            onChange={(e) => {
+                              onChange(e.target.value);
+                            }}
+                            value={typeof value === 'string' ? value : ''}
+                          />
+                          <div className="flex items-center space-x-2">
+                            <Upload className="h-4 w-4" />
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  onChange(file);
+                                }
+                              }}
+                            />
+                          </div>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>

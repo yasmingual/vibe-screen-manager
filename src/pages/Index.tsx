@@ -1,16 +1,16 @@
-
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ContentCard } from "@/components/ContentCard";
 import { ContentForm } from "@/components/ContentForm";
 import { useContentStore, ContentItem } from "@/lib/store";
-import { Plus, Trash2, Monitor, Rss } from "lucide-react";
+import { Plus, Trash2, Monitor, Rss, Film } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { RssFeedDialog } from "@/components/RssFeedDialog";
+import { TrailerSearchDialog } from "@/components/TrailerSearchDialog";
 
 const Index = () => {
   const { items, addItem, updateItem, removeItem, fetchItems, isLoading } = useContentStore();
@@ -18,6 +18,7 @@ const Index = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isRssDialogOpen, setIsRssDialogOpen] = useState(false);
+  const [isTrailerDialogOpen, setIsTrailerDialogOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
   // Fetch data on component mount
@@ -107,6 +108,14 @@ const Index = () => {
     return Promise.resolve();
   };
 
+  const handleImportTrailer = async (trailerItems: Omit<ContentItem, "id" | "createdAt">[]) => {
+    // Add all items from the trailers
+    for (const item of trailerItems) {
+      await addItem(item);
+    }
+    return Promise.resolve();
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 bg-background border-b">
@@ -124,6 +133,10 @@ const Index = () => {
             <Button onClick={() => setIsRssDialogOpen(true)} variant="outline">
               <Rss className="h-4 w-4 mr-2" />
               RSS Feed
+            </Button>
+            <Button onClick={() => setIsTrailerDialogOpen(true)} variant="outline">
+              <Film className="h-4 w-4 mr-2" />
+              Trailers
             </Button>
             <Button onClick={() => setIsAddDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
@@ -206,6 +219,13 @@ const Index = () => {
         open={isRssDialogOpen}
         onOpenChange={setIsRssDialogOpen}
         onImport={handleImportRss}
+      />
+
+      {/* Trailer Search Dialog */}
+      <TrailerSearchDialog 
+        open={isTrailerDialogOpen}
+        onOpenChange={setIsTrailerDialogOpen}
+        onImport={handleImportTrailer}
       />
 
       {/* Delete Content Dialog */}

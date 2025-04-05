@@ -4,18 +4,20 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ContentCard } from "@/components/ContentCard";
 import { ContentForm } from "@/components/ContentForm";
 import { useContentStore, ContentItem } from "@/lib/store";
-import { Plus, Trash2, Monitor } from "lucide-react";
+import { Plus, Trash2, Monitor, Rss } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { RssFeedDialog } from "@/components/RssFeedDialog";
 
 const Index = () => {
   const { items, addItem, updateItem, removeItem, fetchItems, isLoading } = useContentStore();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isRssDialogOpen, setIsRssDialogOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
   // Fetch data on component mount
@@ -97,6 +99,14 @@ const Index = () => {
     }
   };
 
+  const handleImportRss = async (rssItems: Omit<ContentItem, "id" | "createdAt">[]) => {
+    // Add all items from the RSS feed
+    for (const item of rssItems) {
+      await addItem(item);
+    }
+    return Promise.resolve();
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 bg-background border-b">
@@ -110,6 +120,10 @@ const Index = () => {
                 <Monitor className="h-4 w-4 mr-2" />
                 Launch Display
               </Link>
+            </Button>
+            <Button onClick={() => setIsRssDialogOpen(true)} variant="outline">
+              <Rss className="h-4 w-4 mr-2" />
+              RSS Feed
             </Button>
             <Button onClick={() => setIsAddDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
@@ -128,10 +142,16 @@ const Index = () => {
           <div className="flex flex-col items-center justify-center py-20">
             <h2 className="text-2xl font-semibold mb-4">No content yet</h2>
             <p className="text-muted-foreground mb-6">Start by adding images or videos to your playlist</p>
-            <Button onClick={() => setIsAddDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Content
-            </Button>
+            <div className="flex gap-4">
+              <Button onClick={() => setIsAddDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Content
+              </Button>
+              <Button onClick={() => setIsRssDialogOpen(true)} variant="outline">
+                <Rss className="h-4 w-4 mr-2" />
+                Import RSS Feed
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -180,6 +200,13 @@ const Index = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* RSS Feed Dialog */}
+      <RssFeedDialog 
+        open={isRssDialogOpen}
+        onOpenChange={setIsRssDialogOpen}
+        onImport={handleImportRss}
+      />
 
       {/* Delete Content Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

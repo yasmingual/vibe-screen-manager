@@ -15,6 +15,8 @@ export type Database = {
           created_at: string
           duration: number
           id: string
+          left_background_image: string | null
+          right_background_image: string | null
           source: string
           title: string
           type: string
@@ -26,6 +28,8 @@ export type Database = {
           created_at?: string
           duration: number
           id?: string
+          left_background_image?: string | null
+          right_background_image?: string | null
           source: string
           title: string
           type: string
@@ -37,6 +41,8 @@ export type Database = {
           created_at?: string
           duration?: number
           id?: string
+          left_background_image?: string | null
+          right_background_image?: string | null
           source?: string
           title?: string
           type?: string

@@ -24,29 +24,36 @@ interface RssFeedDialogProps {
 export function RssFeedDialog({ open, onOpenChange, onImport }: RssFeedDialogProps) {
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleImport = async () => {
     if (!url.trim()) {
-      toast.error("Por favor, informe um URL válido");
+      setError("Por favor, informe um URL válido");
       return;
     }
 
     setIsLoading(true);
+    setError(null);
 
     try {
+      toast.info("Buscando feed RSS...");
       const feedItems = await fetchRssFeed(url);
       
       if (feedItems.length === 0) {
+        setError("Nenhum item encontrado no feed");
         toast.warning("Nenhum item encontrado no feed");
         return;
       }
 
+      toast.info(`Importando ${feedItems.length} itens...`);
       await onImport(feedItems);
       setUrl("");
       onOpenChange(false);
       toast.success(`${feedItems.length} items importados com sucesso!`);
     } catch (error) {
       console.error("Error importing RSS feed:", error);
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      setError(`Erro ao importar feed: ${errorMessage}`);
       toast.error("Erro ao importar feed. Verifique a URL e tente novamente.");
     } finally {
       setIsLoading(false);
@@ -69,8 +76,21 @@ export function RssFeedDialog({ open, onOpenChange, onImport }: RssFeedDialogPro
               id="url"
               placeholder="https://exemplo.com/rss.xml"
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              onChange={(e) => {
+                setUrl(e.target.value);
+                setError(null);
+              }}
+              className={error ? "border-destructive" : ""}
             />
+            {error && <p className="text-sm text-destructive">{error}</p>}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Exemplos de feeds RSS populares:
+            <ul className="mt-1 space-y-1 list-disc list-inside">
+              <li>https://g1.globo.com/rss/g1/</li>
+              <li>https://feeds.folha.uol.com.br/emcimadahora/rss091.xml</li>
+              <li>https://rss.uol.com.br/feed/tecnologia.xml</li>
+            </ul>
           </div>
         </div>
         <DialogFooter>

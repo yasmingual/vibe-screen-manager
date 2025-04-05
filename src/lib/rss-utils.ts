@@ -33,8 +33,9 @@ type CustomFeed = {
   items: CustomItem[];
 };
 
-// Create parser with browser compatibility options
-const parser = new Parser<CustomFeed, CustomItem>({
+// Create a browser-compatible parser configuration
+// We need to mock certain Node.js functionality that the library expects
+const parserConfig = {
   customFields: {
     item: [
       "media:content",
@@ -44,14 +45,12 @@ const parser = new Parser<CustomFeed, CustomItem>({
       "creator",
     ],
   },
-  // Add required options for browser compatibility
   requestOptions: {
-    // This helps with CORS issues
     headers: {
       'Accept': 'application/rss+xml, application/xml, text/xml; q=0.1',
     }
   }
-});
+};
 
 /**
  * Extract the first available image from an RSS item
@@ -114,12 +113,12 @@ function rssItemToContentItem(item: CustomItem): Omit<ContentItem, "id" | "creat
 
 /**
  * Fetch and parse an RSS feed text content using fetch API directly
- * This approach is more browser-friendly than using the parser's parseURL
  */
 async function fetchRssContent(url: string): Promise<string> {
   try {
     // Use a CORS proxy to fetch the RSS feed
-    const response = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
+    const corsProxy = "https://corsproxy.io/?";
+    const response = await fetch(`${corsProxy}${encodeURIComponent(url)}`);
     
     if (!response.ok) {
       throw new Error(`Failed to fetch RSS feed: ${response.status} ${response.statusText}`);
@@ -140,7 +139,11 @@ export async function fetchRssFeed(url: string): Promise<Omit<ContentItem, "id" 
     // First fetch the raw XML content
     const xmlContent = await fetchRssContent(url);
     
-    // Then parse it with rss-parser
+    // Create a new parser instance for each request to avoid issues with event listeners
+    // This is important for browser compatibility
+    const parser = new Parser<CustomFeed, CustomItem>(parserConfig);
+    
+    // Then parse the XML string with rss-parser
     const feed = await parser.parseString(xmlContent);
     
     if (!feed.items || feed.items.length === 0) {
@@ -153,6 +156,6 @@ export async function fetchRssFeed(url: string): Promise<Omit<ContentItem, "id" 
     return contentItems;
   } catch (error) {
     console.error("Error fetching or parsing RSS feed:", error);
-    throw new Error("Failed to fetch or parse RSS feed");
+    throw new Error(`Failed to fetch or parse RSS feed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

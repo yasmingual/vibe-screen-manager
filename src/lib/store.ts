@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +17,7 @@ export interface ContentItem {
   createdAt: Date;
   leftBackgroundImage?: string; // New property for left background image
   rightBackgroundImage?: string; // New property for right background image
+  description?: string;
 }
 
 interface ContentStore {

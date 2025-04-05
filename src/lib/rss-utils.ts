@@ -1,5 +1,5 @@
 import Parser from "rss-parser";
-import { ContentItem } from "@/lib/store";
+import { ContentItem, ContentType } from "@/lib/store";
 
 // Custom parser type with image handling
 interface CustomItem {
@@ -169,25 +169,49 @@ export async function fetchRssFeed(url: string): Promise<Omit<ContentItem, "id" 
  */
 export async function fetchLotteryResults(): Promise<Omit<ContentItem, "id" | "createdAt">[]> {
   try {
-    // URL do feed RSS da Caixa para resultados de loterias
-    const lotteryFeedUrl = "https://loterias.caixa.gov.br/wps/portal/loterias/landing/rss/";
-    
-    // Primeiro busca o feed RSS
-    const feedItems = await fetchRssFeed(lotteryFeedUrl);
-    
-    // Filtra apenas os itens que contêm resultados de loterias
-    const lotteryItems = feedItems.filter(item => 
-      item.title.toLowerCase().includes('resultado') || 
-      item.title.toLowerCase().includes('loteria')
+    // URLs das APIs da Caixa para diferentes loterias
+    const lotteryApis = {
+      megaSena: "https://servicebus2.caixa.gov.br/portaldeloterias/api/megasena",
+      lotofacil: "https://servicebus2.caixa.gov.br/portaldeloterias/api/lotofacil",
+      quina: "https://servicebus2.caixa.gov.br/portaldeloterias/api/quina",
+      lotomania: "https://servicebus2.caixa.gov.br/portaldeloterias/api/lotomania",
+      timemania: "https://servicebus2.caixa.gov.br/portaldeloterias/api/timemania",
+      duplasena: "https://servicebus2.caixa.gov.br/portaldeloterias/api/duplasena",
+      federal: "https://servicebus2.caixa.gov.br/portaldeloterias/api/federal",
+      diadesorte: "https://servicebus2.caixa.gov.br/portaldeloterias/api/diadesorte",
+      supersete: "https://servicebus2.caixa.gov.br/portaldeloterias/api/supersete"
+    };
+
+    // Busca resultados de todas as loterias
+    const results = await Promise.all(
+      Object.entries(lotteryApis).map(async ([lottery, url]) => {
+        try {
+          const response = await fetch(url);
+          if (!response.ok) throw new Error(`Erro ao buscar ${lottery}`);
+          const data = await response.json();
+          
+          // Formata o resultado para exibição
+          const contentItem: Omit<ContentItem, "id" | "createdAt"> = {
+            type: "image" as ContentType,
+            title: `Resultado ${lottery.charAt(0).toUpperCase() + lottery.slice(1)}`,
+            source: '/lottery-placeholder.svg',
+            duration: 15,
+            active: true,
+            leftBackgroundImage: undefined,
+            rightBackgroundImage: undefined,
+            description: `Concurso ${data.numeroConcurso}: ${data.listaDezenas.join(', ')}`
+          };
+          
+          return contentItem;
+        } catch (error) {
+          console.error(`Erro ao buscar ${lottery}:`, error);
+          return null;
+        }
+      })
     );
-    
-    // Formata os itens para exibição
-    return lotteryItems.map(item => ({
-      ...item,
-      type: "image",
-      duration: 15, // Duração maior para permitir leitura dos resultados
-      source: item.source === '/placeholder.svg' ? '/lottery-placeholder.svg' : item.source
-    }));
+
+    // Filtra resultados nulos e retorna apenas os válidos
+    return results.filter((result): result is Omit<ContentItem, "id" | "createdAt"> => result !== null);
   } catch (error) {
     console.error("Erro ao buscar resultados de loterias:", error);
     throw new Error("Falha ao buscar resultados de loterias");

@@ -1,4 +1,3 @@
-
 import Parser from "rss-parser";
 import { ContentItem } from "@/lib/store";
 
@@ -162,5 +161,35 @@ export async function fetchRssFeed(url: string): Promise<Omit<ContentItem, "id" 
   } catch (error) {
     console.error("Error fetching or parsing RSS feed:", error);
     throw new Error(`Failed to fetch or parse RSS feed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Busca resultados de loterias da Caixa
+ */
+export async function fetchLotteryResults(): Promise<Omit<ContentItem, "id" | "createdAt">[]> {
+  try {
+    // URL do feed RSS da Caixa para resultados de loterias
+    const lotteryFeedUrl = "https://loterias.caixa.gov.br/wps/portal/loterias/landing/rss/";
+    
+    // Primeiro busca o feed RSS
+    const feedItems = await fetchRssFeed(lotteryFeedUrl);
+    
+    // Filtra apenas os itens que contêm resultados de loterias
+    const lotteryItems = feedItems.filter(item => 
+      item.title.toLowerCase().includes('resultado') || 
+      item.title.toLowerCase().includes('loteria')
+    );
+    
+    // Formata os itens para exibição
+    return lotteryItems.map(item => ({
+      ...item,
+      type: "image",
+      duration: 15, // Duração maior para permitir leitura dos resultados
+      source: item.source === '/placeholder.svg' ? '/lottery-placeholder.svg' : item.source
+    }));
+  } catch (error) {
+    console.error("Erro ao buscar resultados de loterias:", error);
+    throw new Error("Falha ao buscar resultados de loterias");
   }
 }

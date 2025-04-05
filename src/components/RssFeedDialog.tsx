@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ContentItem } from "@/lib/store";
-import { fetchRssFeed } from "@/lib/rss-utils";
+import { fetchRssFeed, fetchLotteryResults } from "@/lib/rss-utils";
 
 interface RssFeedDialogProps {
   open: boolean;
@@ -60,6 +59,34 @@ export function RssFeedDialog({ open, onOpenChange, onImport }: RssFeedDialogPro
     }
   };
 
+  const handleImportLotteryResults = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      toast.info("Buscando resultados de loterias...");
+      const lotteryItems = await fetchLotteryResults();
+      
+      if (lotteryItems.length === 0) {
+        setError("Nenhum resultado de loteria encontrado");
+        toast.warning("Nenhum resultado de loteria encontrado");
+        return;
+      }
+
+      toast.info(`Importando ${lotteryItems.length} resultados...`);
+      await onImport(lotteryItems);
+      onOpenChange(false);
+      toast.success(`${lotteryItems.length} resultados importados com sucesso!`);
+    } catch (error) {
+      console.error("Error importing lottery results:", error);
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      setError(`Erro ao importar resultados: ${errorMessage}`);
+      toast.error("Erro ao importar resultados de loterias. Tente novamente mais tarde.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
@@ -93,13 +120,23 @@ export function RssFeedDialog({ open, onOpenChange, onImport }: RssFeedDialogPro
             </ul>
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
+        <DialogFooter className="flex flex-col sm:flex-row gap-2">
+          <Button 
+            onClick={handleImportLotteryResults} 
+            disabled={isLoading}
+            variant="outline"
+            className="w-full sm:w-auto"
+          >
+            {isLoading ? "Importando..." : "Importar Resultados de Loterias"}
           </Button>
-          <Button onClick={handleImport} disabled={isLoading}>
-            {isLoading ? "Importando..." : "Importar"}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleImport} disabled={isLoading}>
+              {isLoading ? "Importando..." : "Importar"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

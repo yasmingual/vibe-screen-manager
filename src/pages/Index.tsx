@@ -149,6 +149,26 @@ const Index = () => {
     }
   };
 
+  const handleMoveUp = (id: string) => {
+    const index = items.findIndex(item => item.id === id);
+    if (index > 0) {
+      const newItems = [...items];
+      [newItems[index], newItems[index - 1]] = [newItems[index - 1], newItems[index]];
+      reorderItems(newItems);
+      toast.success('Ordem atualizada com sucesso');
+    }
+  };
+
+  const handleMoveDown = (id: string) => {
+    const index = items.findIndex(item => item.id === id);
+    if (index < items.length - 1) {
+      const newItems = [...items];
+      [newItems[index], newItems[index + 1]] = [newItems[index + 1], newItems[index]];
+      reorderItems(newItems);
+      toast.success('Ordem atualizada com sucesso');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 bg-background border-b">
@@ -220,7 +240,7 @@ const Index = () => {
             strategy={verticalListSortingStrategy}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {items.map((item) => (
+              {items.map((item, index) => (
                 <ContentCard
                   key={item.id}
                   item={item}
@@ -228,6 +248,10 @@ const Index = () => {
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onPreview={handlePreview}
+                  onMoveUp={handleMoveUp}
+                  onMoveDown={handleMoveDown}
+                  isFirst={index === 0}
+                  isLast={index === items.length - 1}
                 />
               ))}
             </div>

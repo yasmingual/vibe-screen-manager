@@ -1,7 +1,7 @@
 import { Button } from "./ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card";
 import { Switch } from "./ui/switch";
-import { Trash2, Edit, Play, GripVertical } from "lucide-react";
+import { Trash2, Edit, Play, GripVertical, ArrowUp, ArrowDown } from "lucide-react";
 import { ContentItem } from "@/lib/store";
 import { formatDuration } from "@/lib/utils";
 import { useState } from "react";
@@ -15,9 +15,23 @@ interface ContentCardProps {
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onPreview: (id: string) => void;
+  onMoveUp: (id: string) => void;
+  onMoveDown: (id: string) => void;
+  isFirst: boolean;
+  isLast: boolean;
 }
 
-export function ContentCard({ item, onToggleActive, onEdit, onDelete, onPreview }: ContentCardProps) {
+export function ContentCard({ 
+  item, 
+  onToggleActive, 
+  onEdit, 
+  onDelete, 
+  onPreview,
+  onMoveUp,
+  onMoveDown,
+  isFirst,
+  isLast
+}: ContentCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
@@ -107,14 +121,25 @@ export function ContentCard({ item, onToggleActive, onEdit, onDelete, onPreview 
             </Button>
           </div>
         )}
-        <div className="absolute top-2 right-2 z-50">
-          <button
-            {...attributes}
-            {...listeners}
-            className="p-1 rounded-full hover:bg-accent"
+        <div className="absolute top-2 right-2 flex flex-col gap-1">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => onMoveUp(item.id)}
+            disabled={isFirst}
+            className="h-6 w-6 p-0"
           >
-            <GripVertical className="h-4 w-4 text-muted-foreground" />
-          </button>
+            <ArrowUp className="h-4 w-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => onMoveDown(item.id)}
+            disabled={isLast}
+            className="h-6 w-6 p-0"
+          >
+            <ArrowDown className="h-4 w-4" />
+          </Button>
         </div>
         <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
           {item.type === 'image' ? 'Image' : 'Video'} • {formatDuration(item.duration)}

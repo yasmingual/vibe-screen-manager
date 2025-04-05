@@ -187,7 +187,7 @@ const Index = () => {
 
       {/* Add Content Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[550px]">
+        <DialogContent className="sm:max-w-[600px] w-[90vw]">
           <DialogHeader>
             <DialogTitle>Add New Content</DialogTitle>
             <DialogDescription>
@@ -203,7 +203,7 @@ const Index = () => {
 
       {/* Edit Content Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[550px]">
+        <DialogContent className="sm:max-w-[600px] w-[90vw]">
           <DialogHeader>
             <DialogTitle>Edit Content</DialogTitle>
           </DialogHeader>

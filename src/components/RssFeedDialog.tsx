@@ -89,7 +89,7 @@ export function RssFeedDialog({ open, onOpenChange, onImport }: RssFeedDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] w-[90vw]">
         <DialogHeader>
           <DialogTitle>Importar conteúdo RSS</DialogTitle>
           <DialogDescription>
@@ -120,7 +120,7 @@ export function RssFeedDialog({ open, onOpenChange, onImport }: RssFeedDialogPro
             </ul>
           </div>
         </div>
-        <DialogFooter className="flex flex-col sm:flex-row gap-2">
+        <DialogFooter className="flex-col sm:flex-row gap-2">
           <Button 
             onClick={handleImportLotteryResults} 
             disabled={isLoading}

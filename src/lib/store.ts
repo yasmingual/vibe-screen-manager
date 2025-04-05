@@ -18,6 +18,7 @@ export interface ContentItem {
   leftBackgroundImage?: string; // New property for left background image
   rightBackgroundImage?: string; // New property for right background image
   description?: string;
+  order: number;
 }
 
 interface ContentStore {
@@ -25,11 +26,14 @@ interface ContentStore {
   activeItemIndex: number;
   isLoading: boolean;
   fetchItems: () => Promise<void>;
-  addItem: (item: Omit<ContentItem, 'id' | 'createdAt'>) => Promise<void>;
-  updateItem: (id: string, updates: Partial<Omit<ContentItem, 'id' | 'createdAt'>>) => Promise<void>;
+  addItem: (item: Omit<ContentItem, 'id' | 'createdAt' | 'order'>) => Promise<void>;
+  updateItem: (id: string, updates: Partial<Omit<ContentItem, 'id' | 'createdAt' | 'order'>>) => Promise<void>;
   removeItem: (id: string) => Promise<void>;
   setActiveItemIndex: (index: number) => void;
   moveItem: (fromIndex: number, toIndex: number) => void;
+  getContents: () => Promise<ContentItem[]>;
+  reorderContents: (newOrder: { id: string; order: number }[]) => Promise<void>;
+  reorderItems: (items: ContentItem[]) => void;
 }
 
 export const useContentStore = create<ContentStore>()(
@@ -64,7 +68,8 @@ export const useContentStore = create<ContentStore>()(
             active: item.active,
             createdAt: new Date(item.created_at),
             leftBackgroundImage: item.left_background_image,
-            rightBackgroundImage: item.right_background_image
+            rightBackgroundImage: item.right_background_image,
+            order: item.order,
           }));
           
           set({ items, isLoading: false });
@@ -110,7 +115,8 @@ export const useContentStore = create<ContentStore>()(
             active: data.active,
             createdAt: new Date(data.created_at),
             leftBackgroundImage: data.left_background_image,
-            rightBackgroundImage: data.right_background_image
+            rightBackgroundImage: data.right_background_image,
+            order: data.order,
           };
           
           set((state) => ({ items: [...state.items, newItem] }));
@@ -187,6 +193,23 @@ export const useContentStore = create<ContentStore>()(
           newItems.splice(toIndex, 0, movedItem);
           return { items: newItems };
         }),
+      
+      getContents: async () => {
+        return get().items.sort((a, b) => (a.order || 0) - (b.order || 0));
+      },
+      
+      reorderContents: async (newOrder) => {
+        set((state) => ({
+          items: state.items.map((item) => {
+            const order = newOrder.find((o) => o.id === item.id)?.order;
+            return order !== undefined ? { ...item, order } : item;
+          }),
+        }));
+      },
+      
+      reorderItems: (items) => {
+        set({ items });
+      },
     }),
     {
       name: 'vibe-screen-content'

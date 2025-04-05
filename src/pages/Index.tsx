@@ -5,21 +5,34 @@ import { ContentForm } from "@/components/ContentForm";
 import { useContentStore, ContentItem } from "@/lib/store";
 import { Plus, Trash2, Monitor, Rss, Film } from "lucide-react";
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { RssFeedDialog } from "@/components/RssFeedDialog";
 import { TrailerSearchDialog } from "@/components/TrailerSearchDialog";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
 
 const Index = () => {
-  const { items, addItem, updateItem, removeItem, fetchItems, isLoading } = useContentStore();
+  const { items, addItem, updateItem, removeItem, fetchItems, isLoading, reorderItems } = useContentStore();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isRssDialogOpen, setIsRssDialogOpen] = useState(false);
   const [isTrailerDialogOpen, setIsTrailerDialogOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Fetch data on component mount
   useEffect(() => {
@@ -99,7 +112,7 @@ const Index = () => {
     const index = items.findIndex(item => item.id === id);
     if (index !== -1) {
       // Update the URL with the index
-      window.open(`/display?start=${index}`, '_blank');
+      navigate(`/preview/${id}`);
     }
   };
 
@@ -117,6 +130,23 @@ const Index = () => {
       await addItem(item);
     }
     return Promise.resolve();
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = items.findIndex((item) => item.id === active.id);
+      const newIndex = items.findIndex((item) => item.id === over.id);
+
+      const newItems = arrayMove(items, oldIndex, newIndex).map((item, index) => ({
+        ...item,
+        order: index
+      }));
+
+      reorderItems(newItems);
+      toast.success('Ordem atualizada com sucesso');
+    }
   };
 
   return (
@@ -150,39 +180,59 @@ const Index = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <h2 className="text-2xl font-semibold mb-4">Loading content...</h2>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Gerenciador de Conteúdo</h1>
+          <div className="flex gap-2">
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar Conteúdo
+            </Button>
+            <Button variant="outline" onClick={() => setIsRssDialogOpen(true)}>
+              <Rss className="h-4 w-4 mr-2" />
+              Importar RSS
+            </Button>
+            <Button variant="outline" onClick={() => setIsTrailerDialogOpen(true)}>
+              <Film className="h-4 w-4 mr-2" />
+              Buscar Trailers
+            </Button>
           </div>
-        ) : items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <h2 className="text-2xl font-semibold mb-4">No content yet</h2>
-            <p className="text-muted-foreground mb-6">Start by adding images or videos to your playlist</p>
-            <div className="flex gap-4">
-              <Button onClick={() => setIsAddDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Content
-              </Button>
-              <Button onClick={() => setIsRssDialogOpen(true)} variant="outline">
-                <Rss className="h-4 w-4 mr-2" />
-                Import RSS Feed
-              </Button>
+        </div>
+
+        <div className="mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar conteúdo..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={items.map(item => item.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {items.map((item) => (
+                <ContentCard
+                  key={item.id}
+                  item={item}
+                  onToggleActive={handleToggleActive}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onPreview={handlePreview}
+                />
+              ))}
             </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {items.map((item) => (
-              <ContentCard
-                key={item.id}
-                item={item}
-                onToggleActive={handleToggleActive}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onPreview={handlePreview}
-              />
-            ))}
-          </div>
-        )}
+          </SortableContext>
+        </DndContext>
       </main>
 
       {/* Add Content Dialog */}

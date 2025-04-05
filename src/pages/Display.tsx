@@ -104,35 +104,46 @@ const Display = () => {
   useEffect(() => {
     if (!currentItem || activeItems.length === 0) return;
     
+    let timer: NodeJS.Timeout | null = null;
+    
     // For videos, we need to wait for them to finish playing
     if (currentItem.type === 'video') {
       if (currentItem.videoSource === 'url' && videoRef.current) {
         // For direct video URLs using HTML5 video element
         const handleVideoEnd = () => {
+          console.log("Video ended, going to next item");
           handleNextItem();
         };
         
         videoRef.current.addEventListener('ended', handleVideoEnd);
         return () => {
-          videoRef.current?.removeEventListener('ended', handleVideoEnd);
+          if (videoRef.current) {
+            videoRef.current.removeEventListener('ended', handleVideoEnd);
+          }
         };
       } else if (!currentItem.useVideoDuration) {
         // Use configured duration if useVideoDuration is false
-        const timer = setTimeout(() => {
+        timer = setTimeout(() => {
+          console.log("Video duration timer ended, going to next item");
           handleNextItem();
         }, currentItem.duration * 1000);
         
-        return () => clearTimeout(timer);
+        return () => {
+          if (timer) clearTimeout(timer);
+        };
       }
       // For YouTube and TikTok videos, we rely on postMessage events or fallback to duration
       // These are handled by event listeners in renderContent
     } else {
       // For images, use the specified duration
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
+        console.log("Image duration timer ended, going to next item");
         handleNextItem();
       }, currentItem.duration * 1000);
       
-      return () => clearTimeout(timer);
+      return () => {
+        if (timer) clearTimeout(timer);
+      };
     }
   }, [currentIndex, currentItem, activeItems.length]);
   
@@ -155,6 +166,12 @@ const Display = () => {
       // Auto-proceed after video ends (handled by 'ended' event)
       console.log("Using natural video duration for playback");
     }
+  };
+  
+  // Handle video ended event for the video container
+  const handleVideoEnded = () => {
+    console.log("Video ended, going to next item");
+    handleNextItem();
   };
   
   // Render different content based on type
@@ -246,8 +263,21 @@ const Display = () => {
           onLoad={() => {
             if (currentItem.useVideoDuration) {
               console.log("YouTube video loaded, waiting for end event");
+              
+              // Set up a fallback timer for YouTube videos
+              // because the 'ended' event is not always reliable
+              if (youtubeRef.current && youtubeRef.current.contentWindow) {
+                const duration = currentItem.duration || 300; // Default to 5 min if not set
+                console.log(`Setting fallback timer for YouTube video: ${duration} seconds`);
+                setTimeout(() => {
+                  handleNextItem();
+                }, duration * 1000);
+              }
             } else {
               console.log("Using configured duration for YouTube video:", currentItem.duration);
+              setTimeout(() => {
+                handleNextItem();
+              }, currentItem.duration * 1000);
             }
           }}
         ></iframe>
@@ -267,14 +297,13 @@ const Display = () => {
           allow="autoplay"
           allowFullScreen
           onLoad={() => {
-            if (!currentItem.useVideoDuration) {
-              // For TikTok videos with configured duration
-              const timer = setTimeout(() => {
-                handleNextItem();
-              }, currentItem.duration * 1000);
-              
-              return () => clearTimeout(timer);
-            }
+            console.log("TikTok video loaded");
+            // For TikTok videos, always use a timer since we can't detect when they end
+            const duration = currentItem.useVideoDuration ? 30 : currentItem.duration; // Default to 30 seconds for TikTok
+            console.log(`Setting timer for TikTok video: ${duration} seconds`);
+            setTimeout(() => {
+              handleNextItem();
+            }, duration * 1000);
           }}
         ></iframe>
       );
@@ -290,7 +319,7 @@ const Display = () => {
         muted={false}
         controls={false}
         onLoadedMetadata={handleVideoMetadata}
-        onEnded={handleNextItem}
+        onEnded={handleVideoEnded}
         onError={(e) => {
           console.error("Error loading video:", e);
           toast.error("Erro ao carregar vídeo");

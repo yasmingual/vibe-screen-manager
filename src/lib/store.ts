@@ -40,8 +40,8 @@ export const useContentStore = create<ContentStore>()(
       isLoading: false,
       
       fetchItems: async () => {
-        set({ isLoading: true });
         try {
+          set({ isLoading: true });
           const { data, error } = await supabase
             .from('content_items')
             .select('*')
@@ -49,7 +49,7 @@ export const useContentStore = create<ContentStore>()(
             
           if (error) {
             console.error('Error fetching items:', error);
-            return;
+            throw error;
           }
           
           // Transform from DB format to store format
@@ -67,10 +67,9 @@ export const useContentStore = create<ContentStore>()(
             rightBackgroundImage: item.right_background_image
           }));
           
-          set({ items });
+          set({ items, isLoading: false });
         } catch (error) {
           console.error('Error fetching items:', error);
-        } finally {
           set({ isLoading: false });
         }
       },

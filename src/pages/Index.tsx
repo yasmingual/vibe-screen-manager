@@ -23,8 +23,11 @@ const Index = () => {
 
   // Fetch data on component mount
   useEffect(() => {
-    fetchItems();
-  }, [fetchItems]);
+    const loadData = async () => {
+      await fetchItems();
+    };
+    loadData();
+  }, []);
 
   // Set up real-time subscription
   useEffect(() => {

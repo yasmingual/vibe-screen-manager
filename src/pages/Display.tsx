@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useContentStore } from "@/lib/store";
 import { useLocation } from "react-router-dom";
@@ -36,18 +35,39 @@ const Display = () => {
   
   // Initial data fetch
   useEffect(() => {
+    let mounted = true;
+    
     const loadData = async () => {
-      setIsLoading(true);
-      await fetchItems();
-      setIsLoading(false);
+      try {
+        setIsLoading(true);
+        await fetchItems();
+        if (mounted) {
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
     };
     
     loadData();
-  }, [fetchItems]);
+    
+    return () => {
+      mounted = false;
+    };
+  }, []); // Removido fetchItems das dependências
   
   // Set up real-time subscription
   useSupabaseRealtime({
-    onUpdate: fetchItems
+    onUpdate: async () => {
+      try {
+        await fetchItems();
+      } catch (error) {
+        console.error('Error in real-time update:', error);
+      }
+    }
   });
   
   // Debugging

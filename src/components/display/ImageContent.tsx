@@ -1,24 +1,28 @@
 
 import { ContentItem } from "@/lib/store";
 import { toast } from "sonner";
+import { useState } from "react";
 
 interface ImageContentProps {
   currentItem: ContentItem;
 }
 
 const ImageContent = ({ currentItem }: ImageContentProps) => {
+  const [imageError, setImageError] = useState(false);
+  
   // Check if the image is the placeholder, indicating it might be from RSS
-  const isPlaceholder = currentItem.source === '/placeholder.svg';
+  const isPlaceholder = currentItem.source === '/placeholder.svg' || imageError;
   
   return (
     <div className="relative w-full h-full flex items-center justify-center">
       <img 
-        src={currentItem.source} 
+        src={imageError ? '/placeholder.svg' : currentItem.source} 
         alt={currentItem.title}
         className="w-full h-full object-contain"
         onError={(e) => {
           console.error("Error loading image:", e);
           toast.error("Erro ao carregar imagem");
+          setImageError(true);
           (e.target as HTMLImageElement).src = '/placeholder.svg';
         }}
       />

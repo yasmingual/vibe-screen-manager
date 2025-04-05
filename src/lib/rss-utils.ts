@@ -33,6 +33,11 @@ type CustomFeed = {
   items: CustomItem[];
 };
 
+// Define proper type for customFields - this is what was causing the error
+interface CustomFieldsConfig {
+  item: (keyof CustomItem)[];
+}
+
 // Create a browser-compatible parser configuration
 // We need to mock certain Node.js functionality that the library expects
 const parserConfig = {
@@ -43,7 +48,7 @@ const parserConfig = {
       "enclosure",
       "guid",
       "creator",
-    ],
+    ] as (keyof CustomItem)[] // Type assertion here helps TypeScript understand
   },
   requestOptions: {
     headers: {
@@ -141,7 +146,7 @@ export async function fetchRssFeed(url: string): Promise<Omit<ContentItem, "id" 
     
     // Create a new parser instance for each request to avoid issues with event listeners
     // This is important for browser compatibility
-    const parser = new Parser<CustomFeed, CustomItem>(parserConfig);
+    const parser = new Parser<CustomFeed, CustomItem>(parserConfig as Parser.ParserOptions<CustomFeed, CustomItem>);
     
     // Then parse the XML string with rss-parser
     const feed = await parser.parseString(xmlContent);

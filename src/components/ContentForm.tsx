@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -9,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { ContentItem, ContentType, VideoSource } from "@/lib/store";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Slider } from "./ui/slider";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Checkbox } from "./ui/checkbox";
 
@@ -41,23 +40,41 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
   
   const form = useForm<ContentFormValues>({
     resolver: zodResolver(contentSchema),
-    defaultValues: initialData || {
-      title: "",
-      type: "image",
-      source: "",
-      videoSource: "youtube",
-      duration: 5,
-      useVideoDuration: true,
-      active: true,
-      leftBackgroundImage: "",
-      rightBackgroundImage: "",
+    defaultValues: {
+      title: initialData?.title || "",
+      type: initialData?.type || "image",
+      source: initialData?.source || "",
+      videoSource: initialData?.videoSource || "youtube",
+      duration: initialData?.duration || 5,
+      useVideoDuration: initialData?.useVideoDuration !== false,
+      active: initialData?.active !== false,
+      leftBackgroundImage: initialData?.leftBackgroundImage || "",
+      rightBackgroundImage: initialData?.rightBackgroundImage || "",
     },
   });
 
+  useEffect(() => {
+    if (initialData) {
+      form.reset({
+        title: initialData.title,
+        type: initialData.type,
+        source: initialData.source,
+        videoSource: initialData.videoSource,
+        duration: initialData.duration,
+        useVideoDuration: initialData.useVideoDuration !== false,
+        active: initialData.active !== false,
+        leftBackgroundImage: initialData.leftBackgroundImage || "",
+        rightBackgroundImage: initialData.rightBackgroundImage || "",
+      });
+      setContentType(initialData.type);
+      setVideoSource(initialData.videoSource);
+      setDuration(initialData.duration);
+      setUseVideoDuration(initialData.useVideoDuration !== false);
+    }
+  }, [initialData, form]);
+
   const handleSubmit = (values: ContentFormValues) => {
-    // For image uploads, check if source is a FileList
     if (values.type === "image" && values.source && typeof values.source === "object") {
-      // Verifica se o objeto tem a propriedade 'files'
       const fileInput = values.source as unknown as { files?: FileList };
       if (fileInput && fileInput.files && fileInput.files.length > 0) {
         const file = fileInput.files[0];
@@ -66,7 +83,6 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
           return;
         }
         
-        // Convert to data URL
         const reader = new FileReader();
         reader.onload = (e) => {
           if (e.target?.result) {
@@ -136,6 +152,7 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
             defaultValue={contentType}
             onValueChange={handleContentTypeChange}
             className="w-full"
+            value={contentType}
           >
             <TabsList className="grid grid-cols-2 w-full">
               <TabsTrigger value="image">Imagem</TabsTrigger>
@@ -308,6 +325,7 @@ export function ContentForm({ initialData, onSubmit, onCancel }: ContentFormProp
                     max={60}
                     step={1}
                     onValueChange={handleDurationChange}
+                    value={[duration]}
                   />
                 </FormControl>
                 <FormMessage />

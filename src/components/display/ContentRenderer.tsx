@@ -1,4 +1,3 @@
-
 import { ContentItem } from "@/lib/store";
 import ImageContent from "./ImageContent";
 import VideoContainer from "./VideoContainer";
@@ -20,7 +19,7 @@ const ContentRenderer = ({
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-full">
-        <h2 className="text-2xl font-semibold mb-4 text-white">Loading content...</h2>
+        <h2 className="text-2xl font-semibold mb-4 text-white">Carregando conteúdo...</h2>
       </div>
     );
   }
